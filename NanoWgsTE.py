@@ -26,10 +26,14 @@ def mapppingBamSort(reads, genome_fasta, mm2 = 'minimap2', samtools_path="samtoo
     sort_bam_file = bam_file.rsplit(r'/', 1)[0] + r"/sorted_" + bam_file.rsplit(r'/', 1)[1]
 
     ##sam to bam
-    os.system('{2} view -Sb {0} > {1}'.format(sam_file, bam_file, samtools_path))
+    samview = '{2} view -Sb {0} > {1}'.format(sam_file, bam_file, samtools_path)
+    print(samview)
+    os.system(samview)
 
     ##sort bam
-    os.system('{2} sort -in {0} -out {1}'.format(bam_file, sort_bam_file, bamtools_path))
+    sortbam = '{2} sort -in {0} -out {1}'.format(bam_file, sort_bam_file, bamtools_path)
+    print(sortbam)
+    os.system(sortbam)
 
     ##index
     os.system('{1} index -in {0}'.format(sort_bam_file, bamtools_path))
@@ -185,7 +189,7 @@ if __name__ == "__main__":
     parser.add_argument('-mlc', '--min_len_clipped', help='minimum length of the clipped part', default=500,type=int)
     parser.add_argument('-bp', '--blastn_path', help='path to BLASTn program', default='blastn')
     parser.add_argument('-mdbp', '--makeblastdb_path', help='path to makeblastdb program', default='makeblastdb')
-    parser.add_argument('-samtp', '--samtools_path', help='path to samtools program', default='bamtools')
+    parser.add_argument('-samtp', '--samtools_path', help='path to samtools program', default='samtools')
     parser.add_argument('-bamtp', '--bamtools_path', help='path to bamtools program', default='bamtools')
     parser.add_argument('-mm2', '--minimap2_path', help='path to minimap2 program', default="minimap2")
 
