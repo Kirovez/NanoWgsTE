@@ -5,34 +5,34 @@ from Bio import SeqIO
 
 def fq2fa(fastq):
     cnt_reads = 0
-    # with open (fastq + '.fasta', 'w') as outFasta:
-    #     for seq in SeqIO.parse(fastq, 'fastq'):
-    #         SeqIO.write(seq, outFasta, 'fasta')
-    #         cnt_reads += 1
-    # print('Number of reads', cnt_reads)
+    with open (fastq + '.fasta', 'w') as outFasta:
+        for seq in SeqIO.parse(fastq, 'fastq'):
+            SeqIO.write(seq, outFasta, 'fasta')
+            cnt_reads += 1
+    print('Number of reads', cnt_reads)
     return(fastq + '.fasta')
 def BLASt_vs_Target(reads, target_fasta, blastpath = "blastn", makeblastdb = 'makeblastdb'):
     outFile = reads + "blast_target.tab"
-    #os.system('{1} -in {0} -out {0} -dbtype nucl'.format(target_fasta, makeblastdb))
+    os.system('{1} -in {0} -out {0} -dbtype nucl'.format(target_fasta, makeblastdb))
     blastCMD = '{3} -query {0} -db {1} -outfmt 6 -num_threads 150 -word_size 11 -out {2}'.format(reads, target_fasta, outFile, blastpath)
     print(blastCMD)
-    #os.system(blastCMD)
+    os.system(blastCMD)
     return(outFile)
 
-def mapppingBamSort(reads, genome_fasta):
-    #os.system('/home/ikirov/Tools/minimap2-2.17_x64-linux/minimap2 -ax map-ont -t 100 {0} {1} > {2}.sam'.format(genome_fasta, reads, reads))
+def mapppingBamSort(reads, genome_fasta, mm2 = 'minimap2', samtools_path="samtools", bamtools_path="bamtools"):
+    os.system('{3} -ax map-ont -t 100 {0} {1} > {2}.sam'.format(genome_fasta, reads, reads, mm2))
     sam_file = '{0}.sam'.format(reads)
     bam_file = sam_file.rsplit('.', 1)[0] + ".bam"
     sort_bam_file = bam_file.rsplit(r'/', 1)[0] + r"/sorted_" + bam_file.rsplit(r'/', 1)[1]
 
     ##sam to bam
-    #os.system('nohup samtools view -Sb {0} > {1}'.format(sam_file, bam_file))
+    os.system('{2} view -Sb {0} > {1}'.format(sam_file, bam_file, samtools_path))
 
     ##sort bam
-    #os.system('bamtools sort -in {0} -out {1}'.format(bam_file, sort_bam_file))
+    os.system('{2} sort -in {0} -out {1}'.format(bam_file, sort_bam_file, bamtools_path))
 
     ##index
-    #os.system('bamtools index -in {}'.format(sort_bam_file))
+    os.system('{1} index -in {0}'.format(sort_bam_file, bamtools_path))
 
     return(sort_bam_file)
 
@@ -137,7 +137,8 @@ def getBed(merged_split_positions, outFile_name):
                 outCNT.write("{0}\t{1}\t{2}\t{3}\t{4}\n".format(chromosome, start, end, id, spl_pos[-1] ))
 
 def main(genome_fasta, fastq, target_fasta, outBed, min_blast_hit=500,
-         mapping_quality=10, min_len_clipped=500, blastpath='blastn', makeblastdb="makeblastdb"):
+         mapping_quality=10, min_len_clipped=500, blastpath='blastn',
+         makeblastdb="makeblastdb", minimap2_path='minimap2', samtools_path='samtools', bamtools_path='bamtools'):
     # 1. fq to fasta
     print('########## 1. Fastq to Fasta conversion #######')
     read_fasta = fq2fa(fastq)
@@ -154,7 +155,8 @@ def main(genome_fasta, fastq, target_fasta, outBed, min_blast_hit=500,
 
     # 4. mapping, bam sorting and indexing
     print('########## 4. Mapping the selected reads to the genome #######')
-    sorted_bam = mapppingBamSort(selected_fastq_reads, genome_fasta)
+    sorted_bam = mapppingBamSort(selected_fastq_reads, genome_fasta, mm2=minimap2_path,
+                                 samtools_path=samtools_path, bamtools_path=bamtools_path)
 
     ## 5. find split positions
     print('########## 5. Identification of the genomic regions with insertions by capture of clipped reads #######')
@@ -181,10 +183,11 @@ if __name__ == "__main__":
     parser.add_argument('-mbh', '--min_blast_hit', help='minimum length of BLAST hit for reads selection', default=500, type=int)
     parser.add_argument('-q', '--map_q', help='minimum mapping quality', default=40,type=int)
     parser.add_argument('-mlc', '--min_len_clipped', help='minimum length of the clipped part', default=500,type=int)
-    parser.add_argument('-bp', '--blastn_path', help='minimum coverage of clipped part', default='blastn')
-    parser.add_argument('-mdbp', '--makeblastdb_path', help='minimum coverage of clipped part', default='makeblastdb')
-    parser.add_argument('-bamtp', '--bamtools_path', help='minimum coverage of clipped part', default='bamtools')
-    parser.add_argument('-mm2', '--minimap2_path', help='minimum coverage of clipped part', default="minimap2")
+    parser.add_argument('-bp', '--blastn_path', help='path to BLASTn program', default='blastn')
+    parser.add_argument('-mdbp', '--makeblastdb_path', help='path to makeblastdb program', default='makeblastdb')
+    parser.add_argument('-samtp', '--samtools_path', help='path to samtools program', default='bamtools')
+    parser.add_argument('-bamtp', '--bamtools_path', help='path to bamtools program', default='bamtools')
+    parser.add_argument('-mm2', '--minimap2_path', help='path to minimap2 program', default="minimap2")
 
 
     args = parser.parse_args()
@@ -192,4 +195,5 @@ if __name__ == "__main__":
     print(args.fastq)
 
     main(args.genome_fasta, args.fastq, args.target_fasta, args.outBed, min_blast_hit = args.min_blast_hit,
-         mapping_quality=args.map_q, min_len_clipped = args.min_len_clipped)
+         mapping_quality=args.map_q, min_len_clipped = args.min_len_clipped, minimap2_path = args.minimap2_path,
+         samtools_path = args.samtools_path, bamtools_path = args.bamtools_path )
