@@ -20,11 +20,11 @@ We created conda environment.yml file to create a virtual environment for NanoWg
 
 
 ## How to run
-*positional arguments:*
-  genome_fasta          path to target sequence in fasta format  
-  fastq                 path to fastq file of reads  
-  target_fasta          path to target sequence in fasta format  
-  outBed                path to the output bed file  
+*positional arguments:*  
+  **genome_fasta**          path to target sequence in fasta format  
+  **fastq**                 path to fastq file of reads  
+  **target_fasta**          path to target sequence in fasta format  
+  **outBed**                path to the output bed file  
 
 *optional arguments:*  
   -h, --help            show this help message and exit
